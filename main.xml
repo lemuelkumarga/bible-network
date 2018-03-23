@@ -1,10 +1,10 @@
 <project>
-  <folder>template</folder>
-  <title>Title 1</title>
-  <excerpt>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus pharetra dolor a aliquam tempus. Suspendisse nulla nisi, fringilla a rhoncus in, blandit eget tellus. In porttitor lorem ut risus pellentesque, id facilisis enim scelerisque.</excerpt>
-  <algo>Algorithm</algo>
+  <folder>bible-network</folder>
+  <title>Constructing Social Networks in the Bible</title>
+  <excerpt>With the advent of social networking sites, we can quantify our social circles seamlessly with the click of a button. But what about the pre-technology era? Using the biblical text as an example, we aim to construct a social network depicting the connections between various characters in the bible. </excerpt>
+  <algo>NLP</algo>
   <code>Python</code>
-  <color></color>
-  <data>#</data>
-  <github>https://github.com/lemuelkumarga/R-template.git</github>
+  <color>yellow</color>
+  <data>https://github.com/lemuelkumarga/bible-network/tree/master/data</data>
+  <github>https://github.com/lemuelkumarga/bible-network.git</github>
 </project>
