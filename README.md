@@ -365,10 +365,10 @@ def plot_overview_stats(attribute, title, ylabel):
     ind = 0
     legends = []
     
-    for name, group in sorted(groups, key=lambda g: np.mean(g[1][attribute]), reverse=True):
+    for name, group in sorted(groups, key=lambda g: np.median(g[1][attribute]), reverse=True):
         
         row_ids = list(range(ind, ind + len(group.index)))
-        middle = np.mean(group[attribute])
+        middle = np.median(group[attribute])
         
         # Plot the Bar Graphs
         plt.bar(row_ids,
@@ -391,7 +391,7 @@ def plot_overview_stats(attribute, title, ylabel):
         ind += len(group.index)
 
     # Add Line Legend
-    legends.append(mlines.Line2D([],[],color=txt_color, label='Average', linestyle ="dashed"))
+    legends.append(mlines.Line2D([],[],color=txt_color, label='Median', linestyle ="dashed"))
     plt.legend(handles=legends, bbox_to_anchor=[1.3, 1.])
 
     
@@ -450,6 +450,10 @@ plt.show()
 
 
 ### Preliminary Insights
+
+#### Faces of God
+
+#### Major Characters
 
 ## Preparation
 
