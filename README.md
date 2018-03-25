@@ -58,7 +58,10 @@ load({"pd":"pandas",
       "np":"numpy",
       "sp":"scipy",
       "mpl":"matplotlib",
-      "nltk":"nltk"})
+      "nltk":"nltk",
+      "wordcloud":"wordcloud",
+      "PIL":"PIL",
+      "operator":"operator"})
 
 # Load All Submodules
 from collections import OrderedDict
@@ -104,7 +107,6 @@ ot_nt = pd.read_csv("data/key_english.csv")\
           .rename(columns={"n" : "Name", "t" : "Testament"})
 genres = pd.read_csv("data/key_genre_english.csv")\
            .rename(columns={"n" : "Genre"})
-genres["Genre"] = genres["g"].map(str) + " " + genres["Genre"]
 
 # Load the main biblical text
 bible = pd.read_csv("data/t_asv.csv")\
@@ -167,7 +169,7 @@ bible.head(5)
       <th>Gen</th>
       <td>Genesis</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>50</td>
       <td>1533</td>
       <td>In the beginning God created the heavens and t...</td>
@@ -176,7 +178,7 @@ bible.head(5)
       <th>Exo</th>
       <td>Exodus</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>40</td>
       <td>1213</td>
       <td>Now these are the names of the sons of Israel,...</td>
@@ -185,7 +187,7 @@ bible.head(5)
       <th>Lev</th>
       <td>Leviticus</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>27</td>
       <td>859</td>
       <td>And Jehovah called unto Moses, and spake unto ...</td>
@@ -194,7 +196,7 @@ bible.head(5)
       <th>Num</th>
       <td>Numbers</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>36</td>
       <td>1288</td>
       <td>And Jehovah spake unto Moses in the wilderness...</td>
@@ -203,7 +205,7 @@ bible.head(5)
       <th>Deut</th>
       <td>Deuteronomy</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>34</td>
       <td>959</td>
       <td>These are the words which Moses spake unto all...</td>
@@ -288,7 +290,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <th>Gen</th>
       <td>Genesis</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>50</td>
       <td>1533</td>
       <td>1756</td>
@@ -298,7 +300,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <th>Exo</th>
       <td>Exodus</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>40</td>
       <td>1213</td>
       <td>1116</td>
@@ -308,7 +310,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <th>Lev</th>
       <td>Leviticus</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>27</td>
       <td>859</td>
       <td>664</td>
@@ -318,7 +320,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <th>Num</th>
       <td>Numbers</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>36</td>
       <td>1288</td>
       <td>996</td>
@@ -328,7 +330,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <th>Deut</th>
       <td>Deuteronomy</td>
       <td>OT</td>
-      <td>1 Law</td>
+      <td>Law</td>
       <td>34</td>
       <td>959</td>
       <td>745</td>
@@ -342,45 +344,60 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
 
 
 ```python
-def plot_overview_stats(attribute, title, ylabel):
+def word_cloud(input, fig_size = (20,10), image = None, colors = None):
+    
+    # Step 1: If there is an image specified, we need to create a mask
+    mask = None
+    if (image != None):
+        mask = np.array(PIL.Image.open(image))
+        if (colors == "image_colors"):
+            colors = wordcloud.ImageColorGenerator(mask)
+    
+    # Step 2: Set up default colors
+    def_colors = mpl.colors.ListedColormap(get_color())
+    
+    # Step 3: Generate Word Cloud
+    #https://stackoverflow.com/questions/43043437/wordcloud-python-with-generate-from-frequencies
+    wc = wordcloud.WordCloud(height=fig_size[1]*100,
+                             width=fig_size[0]*100,
+                             background_color=bg_color,
+                             mask = mask,
+                             colormap = def_colors,
+                             color_func = colors).generate_from_frequencies(input)
 
+    # Step 4: Plot Word Cloud
+    plt.figure(figsize=fig_size)
+    plt.imshow(wc, interpolation='bilinear')
+    plt.axis("off")
+    
+def overview_plot(attribute, title, var_label, val_format="{:.2f}"):
+
+    inputs = OrderedDict((bible['Name'][n], k) for n,k in bible[attribute].iteritems())
+    
     groups = bible.groupby("Genre",sort=False)
 
-    # Get Colors
+    # Create color function
     color_pal = get_color("palette")(len(groups))
     color_dict = { }
     ind = 0
     for name in groups.groups.keys():
         color_dict[name] = color_pal[ind]
         ind += 1
+
+    def color_func(word, font_size, position, orientation, random_state=3,**kwargs):
+        return color_dict[bible[bible["Name"] == word]["Genre"].str.cat()]
+
+    word_cloud(inputs, fig_size=(20,8), colors = color_func)
     
-    plt.figure(figsize=(20,5))
-
-    # Add Titles and Labels
     plt.title(title)
-    plt.xticks([])
-    plt.ylabel(ylabel)
-
-    # Legend container
-    ind = 0
+    
+    # Legends
     legends = []
     
-    for name, group in sorted(groups, key=lambda g: np.median(g[1][attribute]), reverse=True):
-        
-        row_ids = list(range(ind, ind + len(group.index)))
-        middle = np.median(group[attribute])
-        
-        # Plot the Bar Graphs
-        plt.bar(row_ids,
-                group[attribute],
-                color= fade_color(color_dict[name],0.05))
-
-        # Plot Average Lines
-        plt.plot([min(row_ids) - 0.5, max(row_ids) + 0.5],
-                 [middle, middle],
-                 color = color_dict[name],
-                 linestyle = "dashed",
-                 linewidth = 3)
+    # Genre Legends
+    # Add Header for Legends
+    legends.append(mpatches.Patch(color=bg_color,label="Genre"))
+    for name, group in groups:
 
         # Configure Legends
         legend_text = name + " (" + group.index[0]
@@ -390,14 +407,25 @@ def plot_overview_stats(attribute, title, ylabel):
         legends.append(mpatches.Patch(color=color_dict[name], label=legend_text))
         ind += len(group.index)
 
-    # Add Line Legend
-    legends.append(mlines.Line2D([],[],color=txt_color, label='Median', linestyle ="dashed"))
-    plt.legend(handles=legends, bbox_to_anchor=[1.3, 1.])
-
+        
+    # Add Spacing for Legends
+    legends.append(mpatches.Patch(color=bg_color,label=""))
     
-plot_overview_stats("Chapters", "Number of Chapters by Book", "# of Chapters")
-plt.ylim(0,50)
-plt.show()
+    # Min-Max Legends
+    # Add Header for Legends
+    legends.append(mpatches.Patch(color=bg_color,label=var_label))
+    min_item = min(inputs.items(), key=operator.itemgetter(1))
+    max_item = max(inputs.items(), key=operator.itemgetter(1))
+    legends.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Min: " + val_format.format(min_item[1]) + " - " + min_item[0],
+                          markerfacecolor=ltxt_color, markersize=10))
+    legends.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Max: " + val_format.format(max_item[1]) + " - " + max_item[0],
+                          markerfacecolor=ltxt_color, markersize=20))
+    
+    plt.legend(handles=legends, bbox_to_anchor=[1.3, 1])
+    
+    plt.show()
+    
+overview_plot("Chapters","Number of Chapters by Book","# of Chapters","{:d}")
 ```
 
 
@@ -407,9 +435,7 @@ plt.show()
 
 ```python
 bible["Verses_p_Chapter"] = bible["Verses"] / bible["Chapters"]
-plot_overview_stats("Verses_p_Chapter", "Average Verses / Chapter by Book", "Verses / Chapter")
-plt.ylim(10,50)
-plt.show()
+overview_plot("Verses_p_Chapter","Number of Verses in a Chapter","Verses / Chapter")
 ```
 
 
@@ -419,14 +445,7 @@ plt.show()
 
 ```python
 bible["Sentences_p_Verse"] = bible["Sentences"] / bible["Verses"]
-plot_overview_stats("Sentences_p_Verse", "Average Sentences / Verse by Book", "Sentences / Verse")
-plt.plot([0-0.5, len(bible.index)-0.5],
-         [1, 1],
-         color = fade_color(ltxt_color,0.5),
-         linestyle = "dotted",
-         linewidth = 2)
-plt.ylim(0.3,1.6)
-plt.show()
+overview_plot("Sentences_p_Verse","Number of Sentences in a Verse","Sentences / Verse")
 ```
 
 
@@ -436,10 +455,7 @@ plt.show()
 
 ```python
 bible["Words_p_Sentence"] = bible["Words"] / bible["Sentences"]
-plot_overview_stats("Words_p_Sentence", "Average Words / Sentence by Book", "Words / Sentence")
-plt.ylim(15,60)
-plt.show()
-
+overview_plot("Words_p_Sentence","Sentence Length by Book","Words / Sentence")
 ```
 
 
