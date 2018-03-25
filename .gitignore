@@ -29,3 +29,5 @@ __pycache__
 index_files/*
 /*.html
 
+# README files
+README_files/*
