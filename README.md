@@ -54,9 +54,11 @@ from defaults import *
 
 # Load All Main Modules
 load({"pd":"pandas",
+      "math":"math",
       "cl":"collections",
       "np":"numpy",
       "sp":"scipy",
+      "re":"re",
       "mpl":"matplotlib",
       "nltk":"nltk",
       "wordcloud":"wordcloud",
@@ -65,7 +67,6 @@ load({"pd":"pandas",
 
 # Load All Submodules
 from collections import OrderedDict
-
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -239,7 +240,8 @@ for i, r in bible[["Text"]].iterrows():
     sent_tokens[i] = sent_tokenize(txt)
     word_tokens[i] = word_tokenize(txt)
     bible.at[i,'Sentences'] = len(sent_tokens[i])
-    bible.at[i,'Words'] = len(word_tokens[i])
+    # Remove Punctuation
+    bible.at[i,'Words'] = len([w for w in word_tokens[i] if re.match('\w+',w)])
 
 # Show
 bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head(5)
@@ -294,7 +296,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>50</td>
       <td>1533</td>
       <td>1756</td>
-      <td>44879</td>
+      <td>38037</td>
     </tr>
     <tr>
       <th>Exo</th>
@@ -304,7 +306,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>40</td>
       <td>1213</td>
       <td>1116</td>
-      <td>37232</td>
+      <td>32094</td>
     </tr>
     <tr>
       <th>Lev</th>
@@ -314,7 +316,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>27</td>
       <td>859</td>
       <td>664</td>
-      <td>27278</td>
+      <td>23773</td>
     </tr>
     <tr>
       <th>Num</th>
@@ -324,7 +326,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>36</td>
       <td>1288</td>
       <td>996</td>
-      <td>37053</td>
+      <td>31924</td>
     </tr>
     <tr>
       <th>Deut</th>
@@ -334,13 +336,112 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>34</td>
       <td>959</td>
       <td>745</td>
-      <td>32120</td>
+      <td>27877</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 
+
+#### Book Length
+
+One of the most intuitive ways to understand the books' uneven distribution is to assume that we are doing devotions of each chapter a day. Under such a scenario, we will have the following timeline:   
+
+
+```python
+groups = bible.groupby("Genre",sort=False)
+
+# Construct Colors
+color_pal = get_color("palette")(len(groups))
+color_dict = dict()
+ind = 0
+for name, _ in groups:
+    color_dict[name] = color_pal[ind]
+    ind += 1
+
+# Construct Genre Legends
+g_legends = [mpatches.Patch(color=bg_color,label="Genre")]
+for name, group in groups:
+    legend_text = name + " (" + group.index[0]
+    if (len(group.index) > 1):
+        legend_text += " - " + group.index[-1]
+    legend_text += ")"
+    g_legends.insert(1,mpatches.Patch(color=color_dict[name], label=legend_text))
+
+
+plt.figure(figsize=(20,5))
+    
+# Create Plots
+yticks = []
+ylabels = []
+x_progress = 0
+x_length = sum(bible["Chapters"])
+y_progress = 0
+y_length = len(bible["Chapters"])               
+for name, group in groups:
+
+    row_ids = [ bible.index.get_loc(i) for i in group.index ]
+
+    # Part 1: Bars When Genre Is Still Being Read
+    length = 0
+    # For each book in the genre
+    for idx in row_ids:
+
+        # If we are reading this book in the anniversary 
+        if (math.floor((x_progress + length)/365) < math.floor((x_progress + length + bible["Chapters"][idx])/365)):
+            yticks.append(idx + 1)
+            ylabels.append("{} ({}%)".format(bible.index[idx],round(idx/y_length * 100)))
+
+        plt.broken_barh([(x_progress + length, bible["Chapters"][idx])],
+                        (y_progress, (idx + 1) - y_progress),
+                        facecolors = color_dict[name])
+        length += bible["Chapters"][idx]
+    
+    
+    # Part 2: Bars When Genre has Been Read
+    plt.broken_barh([(x_progress + length, x_length - x_progress - length)],
+                    (y_progress, max(row_ids) + 1 - y_progress), 
+                    facecolors = color_dict[name])
+    
+    x_progress += length
+    y_progress = max(row_ids) + 1
+    
+
+
+# Add Titles and Grid
+plt.title("Chapter Distribution by Book")
+plt.grid(color=fade_color(ltxt_color,0.5), linestyle='dashed')
+
+# Add X-Axis Details
+plt.xlabel("Time Since Start")
+xticks = [365, 2 * 365, 3 * 365 ,sum(bible["Chapters"])]
+xlabels = [ "Year 1", "Year 2", "Year 3", "Year 3\nMonth 3" ]
+plt.xticks(xticks, xlabels)
+plt.xlim(0,x_length)
+
+# Add Y-Axis Details
+yticks.append(y_length)
+ylabels.append("{} ({}%)".format(bible.index[-1],round(1 * 100)))
+plt.ylabel("% of Books Completed")
+plt.yticks(yticks, ylabels)
+plt.ylim(0, y_length)
+
+# Add Legends
+plt.legend(handles=legends, bbox_to_anchor=[1.3, 1.0])
+
+plt.show()
+```
+
+
+![png](README_files/README_9_0.png)
+
+
+By the 1st year, we will have only completed 18% of the books on the bible. If this is not discouraging enough, after a further year, we would still not have completed the Old Testament (Law to Prophets). However, upon reaching the New Testament (Gospels to Apocalyptic) at the middle of the 2nd year, we could complete the whole set of books within 9 months. The Old Testament is more than 3 times longer than the New Testament!
+
+####  Chapter Length
+
+Assuming that the average human reads 200 words per minute, we can also estimate how long it will take to read 1 chapter every day:
 
 
 ```python
@@ -369,101 +470,50 @@ def word_cloud(input, fig_size = (20,10), image = None, colors = None):
     plt.figure(figsize=fig_size)
     plt.imshow(wc, interpolation='bilinear')
     plt.axis("off")
+
+# ----------------------------------------------------------------------------------------------------
+
+# 200 Words Per Minute is the Average Reading Speed
+bible["Minutes_p_Chapter"] = 1. * bible["Words"] / bible["Chapters"] / 200
+inputs = OrderedDict((bible['Name'][n], k) for n,k in bible["Minutes_p_Chapter"].iteritems())
+
+# Define color functions
+def color_func(word, font_size, position, orientation, **kwargs):
+    return color_dict[bible[bible["Name"] == word]["Genre"].str.cat()]
+
+# Create Word Cloud
+word_cloud(inputs, fig_size=(20,8), colors = color_func)
+
+# Create Title
+plt.title("Minutes Required to Read a Chapter")
+
+# Legends
+legends_cloud = []
+# Genre Legends
+legends_cloud.extend(g_legends)
+# Spacing
+legends_cloud.append(mpatches.Patch(color=bg_color,label=""))
+# Min-Max Legends
+# Add Header for Legends
+legends_cloud.append(mpatches.Patch(color=bg_color,label="Minutes Required"))
+max_item = max(inputs.items(), key=operator.itemgetter(1))
+legends_cloud.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Max: " + "{:.2f}".format(max_item[1]) + " - " + max_item[0],
+                      markerfacecolor=ltxt_color, markersize=20))
+min_item = min(inputs.items(), key=operator.itemgetter(1))
+legends_cloud.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Min: " + "{:.2f}".format(min_item[1]) + " - " + min_item[0],
+                      markerfacecolor=ltxt_color, markersize=10))
+plt.legend(handles=legends_cloud, bbox_to_anchor=[1.3, 1])
+
+# Show Figure
+plt.show()
     
-def overview_plot(attribute, title, var_label, val_format="{:.2f}"):
-
-    inputs = OrderedDict((bible['Name'][n], k) for n,k in bible[attribute].iteritems())
-    
-    groups = bible.groupby("Genre",sort=False)
-
-    # Create color function
-    color_pal = get_color("palette")(len(groups))
-    color_dict = { }
-    ind = 0
-    for name in groups.groups.keys():
-        color_dict[name] = color_pal[ind]
-        ind += 1
-
-    def color_func(word, font_size, position, orientation, random_state=3,**kwargs):
-        return color_dict[bible[bible["Name"] == word]["Genre"].str.cat()]
-
-    word_cloud(inputs, fig_size=(20,8), colors = color_func)
-    
-    plt.title(title)
-    
-    # Legends
-    legends = []
-    
-    # Genre Legends
-    # Add Header for Legends
-    legends.append(mpatches.Patch(color=bg_color,label="Genre"))
-    for name, group in groups:
-
-        # Configure Legends
-        legend_text = name + " (" + group.index[0]
-        if (len(group.index) > 1):
-            legend_text += " - " + group.index[-1]
-        legend_text += ")"
-        legends.append(mpatches.Patch(color=color_dict[name], label=legend_text))
-        ind += len(group.index)
-
-        
-    # Add Spacing for Legends
-    legends.append(mpatches.Patch(color=bg_color,label=""))
-    
-    # Min-Max Legends
-    # Add Header for Legends
-    legends.append(mpatches.Patch(color=bg_color,label=var_label))
-    min_item = min(inputs.items(), key=operator.itemgetter(1))
-    max_item = max(inputs.items(), key=operator.itemgetter(1))
-    legends.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Min: " + val_format.format(min_item[1]) + " - " + min_item[0],
-                          markerfacecolor=ltxt_color, markersize=10))
-    legends.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Max: " + val_format.format(max_item[1]) + " - " + max_item[0],
-                          markerfacecolor=ltxt_color, markersize=20))
-    
-    plt.legend(handles=legends, bbox_to_anchor=[1.3, 1])
-    
-    plt.show()
-    
-overview_plot("Chapters","Number of Chapters by Book","# of Chapters","{:d}")
-```
-
-
-![png](README_files/README_8_0.png)
-
-
-
-```python
-bible["Verses_p_Chapter"] = bible["Verses"] / bible["Chapters"]
-overview_plot("Verses_p_Chapter","Number of Verses in a Chapter","Verses / Chapter")
-```
-
-
-![png](README_files/README_9_0.png)
-
-
-
-```python
-bible["Sentences_p_Verse"] = bible["Sentences"] / bible["Verses"]
-overview_plot("Sentences_p_Verse","Number of Sentences in a Verse","Sentences / Verse")
-```
-
-
-![png](README_files/README_10_0.png)
-
-
-
-```python
-bible["Words_p_Sentence"] = bible["Words"] / bible["Sentences"]
-overview_plot("Words_p_Sentence","Sentence Length by Book","Words / Sentence")
 ```
 
 
 ![png](README_files/README_11_0.png)
 
 
-
-
+From the chart above, we conclude that chapter length across books are varied as well. For example, a chapter in <span class="hl orange-text">1 Kings</span> will take around 5.5 minutes to read, whilst a chapter in <span class="hl red-text">Psalms</span> will take around 1.5 minutes to read. 
 
 ### Preliminary Insights
 
