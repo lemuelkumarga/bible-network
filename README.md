@@ -87,7 +87,7 @@ defaults()
 
 ### Loading the Data
 
-For this exercise, we will be using the bible <a data-toggle="popover" title="" data-content="A collection of texts" data-original-title="Corpus">corpus</a> from <a href="https://www.kaggle.com/oswinrh/bible/data">Kaggle.</a> The data will be stored in abbreviated book keys, with each book containing the following attributes:
+For this exercise, we will be using the bible <a data-toggle="popover" title="" data-content="A collection of texts" data-original-title="Corpus">corpus</a> from <a href="https://www.kaggle.com/oswinrh/bible/data" target="_blank">Kaggle.</a> The data will be stored in abbreviated book keys, with each book containing the following attributes:
 
 * <span class="hl">Book Name</span>: Full name of the book
 * <span class="hl">Testament</span>: New (NT) or old (OT)
@@ -437,11 +437,11 @@ plt.show()
 ![png](README_files/README_9_0.png)
 
 
-By the 1st year, we will have only completed 18% of the books on the bible. If this is not discouraging enough, after a further year, we would still not have completed the Old Testament (Law to Prophets). However, upon reaching the New Testament (Gospels to Apocalyptic) at the middle of the 2nd year, we could complete the whole set of books within 9 months. The Old Testament is more than 3 times longer than the New Testament!
+By the 1st year, we will have only completed 18% of the books on the bible. If this is not discouraging enough, after a further year, we would still not have completed the Old Testament (<span class="yellow-text">Law</span> to <span class="red-text">Prophets</span>). However, upon reaching the New Testament (<span class="blue-text">Gospels</span> to <span class="green-text">Apocalyptic</span>), we could complete the whole set of books within 9 months. The Old Testament is at least 3 times longer than the New Testament!
 
 ####  Chapter Length
 
-Assuming that the average human reads <a href="http://www.readingsoft.com/">200 words per minute</a>, we can also estimate how long it will take to read 1 chapter every day:
+Assuming that the average human reads <a href="http://www.readingsoft.com/" target="_blank">200 words per minute</a>, we can also estimate how long it will take to read 1 chapter every day:
 
 
 ```python
@@ -513,7 +513,7 @@ plt.show()
 ![png](README_files/README_11_0.png)
 
 
-From the chart above, we conclude that chapter length across books are varied as well. For example, a chapter in <span class="hl orange-text">1 Kings</span> will take around 5.5 minutes to read, whilst a chapter in <span class="hl red-text">Psalms</span> will take around 1.5 minutes to read. 
+From the chart above, we conclude that chapter lengths across books are varied as well. For example, a chapter in <span class="hl orange-text">1 Kings</span> will take around 5.5 minutes to read, whilst a chapter in <span class="hl red-text">Psalms</span> will take around 1.5 minutes to read. 
 
 ### Preliminary Insights
 
