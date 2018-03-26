@@ -441,7 +441,7 @@ By the 1st year, we will have only completed 18% of the books on the bible. If t
 
 ####  Chapter Length
 
-Assuming that the average human reads 200 words per minute, we can also estimate how long it will take to read 1 chapter every day:
+Assuming that the average human reads <a href="http://www.readingsoft.com/">200 words per minute</a>, we can also estimate how long it will take to read 1 chapter every day:
 
 
 ```python
