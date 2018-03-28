@@ -169,6 +169,14 @@ def __get_minmax_legends(input, title, key_format = "{:.2f}"):
     output.append(mlines.Line2D([0], [0], marker='o', color=_d.bg_color, label="Min: " + key_format.format(min_item[1]) + " - " + min_item[0],
                       markerfacecolor=_d.ltxt_color, markersize=10))
     return output
+
+__min_color = _d.pollute_color(_d.bg_color,_d.txt_color,0.4)
+def __get_saturate_legends(title):
+    output = []
+    output.append(mpatches.Patch(color=_d.bg_color,label=title))
+    output.append(mpatches.Patch(color=_d.get_color(0),label="Concentrated In 1 Genre"))
+    output.append(mpatches.Patch(color=_d.pollute_color(__min_color,_d.get_color(0),0.3), label="Spread Out Across\nMultiple Genres"))
+    return output
     
 ```
 
@@ -203,6 +211,8 @@ bible = pd.read_csv("data/t_asv.csv")\
           .groupby("b", as_index=False)\
           .agg({"c": pd.Series.nunique, "v": "size", "t":" ".join})\
           .rename(columns={"c": "Chapters","v": "Verses","t": "Text"})
+# Perform some cleaning
+bible['Text'] = bible['Text'].apply(lambda t: re.sub("[`']","",t))
 
 # Join the remaining book statistics
 bible = bible.join(abb.set_index('b'), on='b')\
@@ -385,7 +395,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>50</td>
       <td>1533</td>
       <td>1756</td>
-      <td>38037</td>
+      <td>38097</td>
     </tr>
     <tr>
       <th>Exo</th>
@@ -395,7 +405,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>40</td>
       <td>1213</td>
       <td>1116</td>
-      <td>32094</td>
+      <td>32177</td>
     </tr>
     <tr>
       <th>Lev</th>
@@ -405,7 +415,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>27</td>
       <td>859</td>
       <td>664</td>
-      <td>23773</td>
+      <td>23830</td>
     </tr>
     <tr>
       <th>Num</th>
@@ -415,7 +425,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>36</td>
       <td>1288</td>
       <td>996</td>
-      <td>31924</td>
+      <td>32034</td>
     </tr>
     <tr>
       <th>Deut</th>
@@ -425,7 +435,7 @@ bible[["Name","Testament","Genre","Chapters","Verses","Sentences","Words"]].head
       <td>34</td>
       <td>959</td>
       <td>745</td>
-      <td>27877</td>
+      <td>27952</td>
     </tr>
   </tbody>
 </table>
@@ -621,11 +631,10 @@ for name, group in __get_genre_groups():
 character_freq = nltk.ConditionalFreqDist(character_freq)
 
 # Create color functions to determine the genre most associated with the character
-min_color = _d.pollute_color(bg_color,_d.txt_color,0.3)
 def color_func(word, font_size, position, orientation, **kwargs):
     most_common_genre = character_freq[word].most_common(1)[0][0]
     intensity = 1. * character_freq[word][most_common_genre] / sum(character_freq[word].values())
-    return _d.pollute_color(min_color, __get_genre_colors()[most_common_genre],intensity)
+    return _d.pollute_color(__min_color, __get_genre_colors()[most_common_genre],intensity)
 
 # Plot word cloud for each name
 inputs = {}
@@ -639,13 +648,7 @@ plt.title("Major Character Occurences")
 # Legends
 legend_cloud = list(__get_genre_legends(False))
 legend_cloud.append(__get_legend_separator)
-def get_saturate_legends(title):
-    output = []
-    output.append(mpatches.Patch(color=bg_color,label=title))
-    output.append(mpatches.Patch(color=_d.get_color(0),label="Concentrated In 1 Genre"))
-    output.append(mpatches.Patch(color=_d.pollute_color(min_color,_d.get_color(0),0.3), label="Spread Out Across\nMultiple Genres"))
-    return output
-legend_cloud.extend(get_saturate_legends("Concentration"))
+legend_cloud.extend(__get_saturate_legends("Concentration"))
 legend_cloud.append(__get_legend_separator)
 legend_cloud.extend(__get_minmax_legends(inputs, "Word Count","{:d}"))
 plt.legend(handles=legend_cloud, bbox_to_anchor = [1.28, 1.])
@@ -655,19 +658,7 @@ plt.show()
 ```
 
 
-    ---------------------------------------------------------------------------
-
-    NameError                                 Traceback (most recent call last)
-
-    <ipython-input-8-1ee10c1ac4fc> in <module>()
-         11 
-         12 # Create color functions to determine the genre most associated with the character
-    ---> 13 min_color = _d.pollute_color(bg_color,_d.txt_color,0.3)
-         14 def color_func(word, font_size, position, orientation, **kwargs):
-         15     most_common_genre = character_freq[word].most_common(1)[0][0]
-
-
-    NameError: name 'bg_color' is not defined
+![png](README_files/README_17_0.png)
 
 
 Based on the list, we conclude that <span class="hl orange-text">David</span> appears the most in the bible. In addition, his appearances seem to be concentrated within the <span class="hl orange-text">History</span> genre. This is in stark-contrast to <span class="hl">Jesus</span>, whose name appeared across multiple genres (in particular across the New Testament).
@@ -676,11 +667,106 @@ Based on the list, we conclude that <span class="hl orange-text">David</span> ap
 
 ## Preparation
 
-### Finding the Characters
+In order to construct a social network, we first need to identify the relevant entities in the bible. One approach is to find a list of characters from external sources, and then using that list to identify the entity. However, this method is <span class="hl">unscalable</span>. To illustrate this, suppose that we would like to construct a similar network for "Oliver Twist". Then, we would need to find a list of names associated with the book. But what happens if we are not able to find such a list? The project would come to a dead end.
 
-### Cleaning Up the Errors
+As such, to reduce reliance on external sources, we need to develop a more robust approach in identifying the relevant characters in the bible.
 
-### Insights
+### Finding the Entities
+
+Fortunately, we are able to capture names due to the nature of English linguistics. Names fall under the category of "Proper Nouns", which we can detect using <a href="https://en.wikipedia.org/wiki/Part-of-speech_tagging" target="_blank">Part-of-Speech (POS) tagging</a>:
+
+
+
+```python
+tagged_word_tokens = OrderedDict((n, nltk.tag.pos_tag(wt)) for n, wt in word_tokens.items())
+# Extract Only Proper Nouns and Add Index
+proper_noun_tokens = OrderedDict((n, [(i, w[0]) for i, w in enumerate(wt) if w[1] == "NNP"]) for n, wt in tagged_word_tokens.items())
+# Print 100 Most Common Words
+noun_freq = nltk.FreqDist(w for n,wt in proper_noun_tokens.items() for i, w in wt)
+", ".join([n for n, v in noun_freq.most_common(50)])
+```
+
+
+
+
+    'Jehovah, God, Israel, Lord, David, O, Jesus, Judah, Jerusalem, Thou, Moses, Egypt, Behold, Christ, Saul, Jacob, Aaron, Spirit, Babylon, Solomon, Son, Father, Abraham, Joseph, Joshua, Pharaoh, Jordan, Levites, Go, Thy, Ye, Moab, Psalm, Benjamin, Ephraim, My, Holy, A, Paul, Peter, Jews, Yea, Zion, Manasseh, Samuel, Jeremiah, Joab, John, Hezekiah, Isaac'
+
+
+
+Based on the above, we have captured a majority of names by tagging them under Proper Nouns. However, there are also some false positive words such as <span class="hl">O, Go, Thy, Ye</span> that have to be removed. It is also interesting to see entities other than people, for example, <span class="hl">Jerusalem, Babylon</span> represent countries. In the next section, we will determine how to handle each case.
+
+### Managing the Cases
+
+The first case to handle is the occurence of words which are not proper nouns (<span class="hl">O, Go, Thy, Ye</span>). To solve this, we simply need to exclude such words from consideration:
+
+
+
+```python
+false_npp = ['O','Thou','Behold','Go','Thy','Ye','My','A','Yea','Thus','Come',
+             'Therefore','Wherefore','Be','So','Hear','ye','Psalm','Selah','Arise','Woe','King','Speak',
+             'Almighty','Who','How','Chief','thy','Fear','Musician','Which','High','Take','Most',
+             'Shall','Lo','Let','Praise','Make','Nay','Say','River','Art','Amen','South','Lest',
+             'Bring','Oh','Remember','Did','Teacher','Sea','Whosoever','Do','Every','Unto','Know',
+             'Are','Mine','See','Tell','Whoso','Gods','Wilt','Red','Holy']
+# Extract Only Proper Nouns and Add Index
+proper_noun_tokens = OrderedDict((n, [(i, w) for i, w in wt if w not in false_npp]) for n, wt in proper_noun_tokens.items())
+# Print 100 Most Common Words after excluding False Proper Nouns
+noun_freq = nltk.FreqDist(w for n,wt in proper_noun_tokens.items() for i, w in wt)
+", ".join([n for n, v in noun_freq.most_common(50)])
+```
+
+
+
+
+    'Jehovah, God, Israel, Lord, David, Jesus, Judah, Jerusalem, Moses, Egypt, Christ, Saul, Jacob, Aaron, Spirit, Babylon, Solomon, Son, Father, Abraham, Joseph, Joshua, Pharaoh, Jordan, Levites, Moab, Benjamin, Ephraim, Paul, Peter, Jews, Zion, Manasseh, Samuel, Jeremiah, Joab, John, Hezekiah, Isaac, Assyria, Samaria, Jonathan, Jehovahs, Ammon, Absalom, Gentiles, Jeroboam, Gilead, Philistines, Elijah'
+
+
+
+The second case to consider is non-human entities. Some examples of these are nations (<span class="hl">Jerusalem, Babylon</span>), locations (<span class="hl">Galilee</span>) and false idols (<span class="hl">Baal</span>). Since the relationships between non-human entities can also yield useful insights, we will not be excluding such words.
+
+The third case is symbols referencing to an entity (<span class="hl">Lord, Father, Son</span>). We will be including such words as well for the same reason as the second case.
+
+### The Entity Cloud
+
+Using the <span class="hl">Proper Noun</span> approach, we can subsequently plot these entities into a word cloud:
+
+
+```python
+# The frequency of each character occurence by genre
+character_freq = nltk.ConditionalFreqDist((w[1],bible["Genre"][n]) for n,wt in proper_noun_tokens.items() for w in wt)
+
+# Create color functions to determine the genre most associated with the character
+def color_func(word, font_size, position, orientation, **kwargs):
+    most_common_genre = character_freq[word].most_common(1)[0][0]
+    intensity = 1. * character_freq[word][most_common_genre] / sum(character_freq[word].values())
+    return _d.pollute_color(__min_color, __get_genre_colors()[most_common_genre],intensity)
+
+# Plot word cloud for each name
+inputs = {}
+for n, fd in character_freq.items():
+    inputs[n] = sum(fd.values())
+__word_cloud(inputs, colors=color_func)
+
+# Titles
+plt.title("Entities in the Bible")
+
+# Legends
+legend_cloud = list(__get_genre_legends(False))
+legend_cloud.append(__get_legend_separator)
+legend_cloud.extend(__get_saturate_legends("Concentration"))
+legend_cloud.append(__get_legend_separator)
+legend_cloud.extend(__get_minmax_legends(inputs, "Word Count","{:d}"))
+plt.legend(handles=legend_cloud, bbox_to_anchor = [1.28, 1.])
+plt.show()
+```
+
+
+![png](README_files/README_23_0.png)
+
+
+As can be seen, we have now expanded the word cloud of major characters (<span class="orange-text">David</span>, <span class="purple-text">Jesus</span>) into a larger entity of names, nations, symbols (amongst others). There are also some interesting patterns starting to emerge. For once, the word <span class="purple-text hl">Jesus</span> is dispersed across multiple genres, while the word <span class="cyan-text hl">Christ</span> is concentrated within the Epistles!
+
+
 
 ## Constructing the Network
 
