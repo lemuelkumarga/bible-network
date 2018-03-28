@@ -50,20 +50,21 @@ First load the necessary modules for this exercise.
 ```python
 import sys
 sys.path.append('shared/')
-from defaults import *
+import defaults as _d
 
 # Load All Main Modules
-load({"pd":"pandas",
-      "math":"math",
-      "cl":"collections",
-      "np":"numpy",
-      "sp":"scipy",
-      "re":"re",
-      "mpl":"matplotlib",
-      "nltk":"nltk",
-      "wordcloud":"wordcloud",
-      "PIL":"PIL",
-      "operator":"operator"})
+_d.load({"pd":"pandas",
+         "math":"math",
+         "cl":"collections",
+         "np":"numpy",
+         "sp":"scipy",
+         "re":"re",
+         "mpl":"matplotlib",
+         "nltk":"nltk",
+         "wordcloud":"wordcloud",
+         "PIL":"PIL",
+         "operator":"operator"},
+         globals())
 
 # Load All Submodules
 from collections import OrderedDict
@@ -73,7 +74,7 @@ import matplotlib.patches as mpatches
 # If you can't find the module, run nltk.download() in python
 from nltk import sent_tokenize, word_tokenize
 
-defaults()
+_d.stylize()
 ```
 
 
@@ -83,7 +84,7 @@ defaults()
 
 
 
-We will also construct helper functions that will be useful later on.
+We will also construct helper functions to be used later on.
 
 
 ```python
@@ -99,7 +100,7 @@ def __get_genre_groups():
 def __get_genre_colors():
     global _genre_colors
     if "_genre_colors" not in globals():
-        color_pal = get_color("palette")(len(__get_genre_groups()))
+        color_pal = _d.get_color("palette")(len(__get_genre_groups()))
         color_dict = dict()
         ind = 0
         for name, _ in __get_genre_groups():
@@ -112,7 +113,7 @@ def __get_genre_legends(rev = True):
     global _genre_legends
     global _genre_legends_rev
     if "_genre_legends" not in globals():
-        _genre_legends = [mpatches.Patch(color=bg_color,label="Genre")]
+        _genre_legends = [mpatches.Patch(color=_d.bg_color,label="Genre")]
         for name, group in __get_genre_groups():
             legend_text = name + " (" + group.index[0]
             if (len(group.index) > 1):
@@ -140,13 +141,13 @@ def __word_cloud(input, fig_size = (20,10), image = None, colors = None):
             colors = wordcloud.ImageColorGenerator(mask)
     
     # Step 2: Set up default colors
-    def_colors = mpl.colors.ListedColormap(get_color())
+    def_colors = mpl.colors.ListedColormap(_d.get_color())
     
     # Step 3: Generate Word Cloud
     #https://stackoverflow.com/questions/43043437/wordcloud-python-with-generate-from-frequencies
     wc = wordcloud.WordCloud(height=fig_size[1]*100,
                              width=fig_size[0]*100,
-                             background_color=bg_color,
+                             background_color=_d.bg_color,
                              mask = mask,
                              colormap = def_colors,
                              color_func = colors).generate_from_frequencies(input)
@@ -156,17 +157,17 @@ def __word_cloud(input, fig_size = (20,10), image = None, colors = None):
     plt.imshow(wc, interpolation='bilinear')
     plt.axis("off")
 
-__get_legend_separator = mpatches.Patch(color=bg_color,label="")    
+__get_legend_separator = mpatches.Patch(color=_d.bg_color,label="")    
     
 def __get_minmax_legends(input, title, key_format = "{:.2f}"):
     output = []
-    output.append(mpatches.Patch(color=bg_color,label=title))
+    output.append(mpatches.Patch(color=_d.bg_color,label=title))
     max_item = max(input.items(), key=operator.itemgetter(1))
-    output.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Max: " + key_format.format(max_item[1]) + " - " + max_item[0],
-                      markerfacecolor=ltxt_color, markersize=20))
+    output.append(mlines.Line2D([0], [0], marker='o', color=_d.bg_color, label="Max: " + key_format.format(max_item[1]) + " - " + max_item[0],
+                      markerfacecolor=_d.ltxt_color, markersize=20))
     min_item = min(input.items(), key=operator.itemgetter(1))
-    output.append(mlines.Line2D([0], [0], marker='o', color=bg_color, label="Min: " + key_format.format(min_item[1]) + " - " + min_item[0],
-                      markerfacecolor=ltxt_color, markersize=10))
+    output.append(mlines.Line2D([0], [0], marker='o', color=_d.bg_color, label="Min: " + key_format.format(min_item[1]) + " - " + min_item[0],
+                      markerfacecolor=_d.ltxt_color, markersize=10))
     return output
     
 ```
@@ -478,7 +479,7 @@ for name, group in __get_genre_groups():
 
 # Add Titles and Grid
 plt.title("Chapter Distribution by Book")
-plt.grid(color=fade_color(ltxt_color,0.5), linestyle='dashed')
+plt.grid(color=_d.fade_color(_d.ltxt_color,0.5), linestyle='dashed')
 
 # Add X-Axis Details
 plt.xlabel("Time Since Start")
@@ -620,11 +621,11 @@ for name, group in __get_genre_groups():
 character_freq = nltk.ConditionalFreqDist(character_freq)
 
 # Create color functions to determine the genre most associated with the character
-min_color = color_intermediary(bg_color,txt_color,0.3)
+min_color = _d.pollute_color(bg_color,_d.txt_color,0.3)
 def color_func(word, font_size, position, orientation, **kwargs):
     most_common_genre = character_freq[word].most_common(1)[0][0]
     intensity = 1. * character_freq[word][most_common_genre] / sum(character_freq[word].values())
-    return color_intermediary(min_color, __get_genre_colors()[most_common_genre],intensity)
+    return _d.pollute_color(min_color, __get_genre_colors()[most_common_genre],intensity)
 
 # Plot word cloud for each name
 inputs = {}
@@ -641,8 +642,8 @@ legend_cloud.append(__get_legend_separator)
 def get_saturate_legends(title):
     output = []
     output.append(mpatches.Patch(color=bg_color,label=title))
-    output.append(mpatches.Patch(color=get_color(0),label="Concentrated In 1 Genre"))
-    output.append(mpatches.Patch(color=color_intermediary(min_color,get_color(0),0.3), label="Spread Out Across\nMultiple Genres"))
+    output.append(mpatches.Patch(color=_d.get_color(0),label="Concentrated In 1 Genre"))
+    output.append(mpatches.Patch(color=_d.pollute_color(min_color,_d.get_color(0),0.3), label="Spread Out Across\nMultiple Genres"))
     return output
 legend_cloud.extend(get_saturate_legends("Concentration"))
 legend_cloud.append(__get_legend_separator)
@@ -654,7 +655,19 @@ plt.show()
 ```
 
 
-![png](README_files/README_17_0.png)
+    ---------------------------------------------------------------------------
+
+    NameError                                 Traceback (most recent call last)
+
+    <ipython-input-8-1ee10c1ac4fc> in <module>()
+         11 
+         12 # Create color functions to determine the genre most associated with the character
+    ---> 13 min_color = _d.pollute_color(bg_color,_d.txt_color,0.3)
+         14 def color_func(word, font_size, position, orientation, **kwargs):
+         15     most_common_genre = character_freq[word].most_common(1)[0][0]
+
+
+    NameError: name 'bg_color' is not defined
 
 
 Based on the list, we conclude that <span class="hl orange-text">David</span> appears the most in the bible. In addition, his appearances seem to be concentrated within the <span class="hl orange-text">History</span> genre. This is in stark-contrast to <span class="hl">Jesus</span>, whose name appeared across multiple genres (in particular across the New Testament).
