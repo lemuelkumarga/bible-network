@@ -1420,5 +1420,5 @@ The approach described in this project is relatively simple, and by no means per
 * <span class="hl">Name Disambiguation</span>: There may be some names which are the same, but correspond to different individuals. One example would be King Saul and Paul's former name.
 * <span class="hl">Name Matching</span>: At the same time, there are some entities which are represented by different names (Abraham and Abram). Merging these two entities into one may provide a more accurate representation of the entities' connections with one another.
 * <span class="hl">Pronoun Disambiguation</span>: This is a difficult task, but can potentially yield to huge changes in the network. For example, the Epistles genre are letters written by an author, hence there is a significant usage of the word "I". Replacing these pronouns with the actual entity will uncover numerous relationships that were overlooked.
-* <span class="hl">Distance Definition</span>: We currently define the existence of a relationship exists if two words are near each other. Perhaps there could be a better way of defining that?
+* <span class="hl">Distance Definition</span>: We currently define the existence of a relationship if two words are near each other. Perhaps there could be a better way of defining that?
 
