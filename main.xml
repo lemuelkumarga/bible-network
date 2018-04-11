@@ -1,7 +1,7 @@
 <project>
   <folder>bible-network</folder>
   <title>Constructing Social Networks in the Bible</title>
-  <excerpt>With the advent of social networking sites, we can quantify our social circles seamlessly with the click of a button. But what about the pre-technology era? Using the biblical text as an example, we aim to construct a social network depicting the connections between various characters in the bible. </excerpt>
+  <excerpt>The rise of social networking sites and scalable algorithms have allowed us to easily gather information about our social circles. But what about those people who lived before the 21st century? Using biblical text as an example, we aim to construct a social network amongst the various entities in the bible. </excerpt>
   <algo>NLP</algo>
   <code>Python</code>
   <color>yellow</color>
