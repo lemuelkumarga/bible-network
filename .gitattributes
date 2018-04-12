@@ -1,3 +1,2 @@
-index_files/* linguist-vendored
-/*.html linguist-documentation
+html/* linguist-vendored
 cache/* filter=lfs diff=lfs merge=lfs -text
