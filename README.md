@@ -44,7 +44,7 @@ cd ../../
 
 # Constructing Social Networks in the Bible
 
-<h4><span class="meta"><span class="by">by</span><span class="writer">Lemuel Kumarga</span><span class="date">Apr 2018</span></span></h4>
+<h4><span class="meta"><span class="writer">Lemuel Kumarga</span><br><span class="date">Apr 2018</span></span></h4>
 
 ## Problem Description
 
